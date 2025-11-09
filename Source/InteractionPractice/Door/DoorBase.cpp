@@ -27,6 +27,7 @@ ADoorBase::ADoorBase()
 	OverlapBox->SetRelativeLocation(FVector(0.f, 0.f, 130.f));
 	
 	OverlapBox->OnComponentBeginOverlap.AddDynamic(this, &ThisClass::OverlapEvent);
+	OverlapBox->OnComponentEndOverlap.AddDynamic(this, &ThisClass::OverlapEnd);
 
 	ConstructorHelpers::FObjectFinder<UStaticMesh> DoorFrame(TEXT("/Script/Engine.StaticMesh'/Game/Mesh/Door/Door_frame.Door_frame'"));
 	if (DoorFrame.Succeeded())
@@ -44,12 +45,39 @@ ADoorBase::ADoorBase()
 void ADoorBase::BeginPlay()
 {
 	Super::BeginPlay();
+
+	if (!Panel)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("DoorBase: Panel is nullptr!"));
+		return;
+	}
+
+	// 시작시 닫힌 Yaw상태 저장
+	CloseYaw = Panel->GetRelativeRotation().Yaw;
+	TargetYaw = CloseYaw;
 	
 }
 
 void ADoorBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	if (!Panel) return;
+
+	if (bIsMoving)
+	{
+		FRotator CurrentRot = Panel->GetRelativeRotation();
+		float NewYaw = FMath::FInterpTo(CurrentRot.Yaw, TargetYaw, DeltaTime, RotateSpeed);
+		CurrentRot.Yaw = NewYaw;
+		Panel->SetRelativeRotation(CurrentRot);
+
+		if (FMath::IsNearlyEqual(NewYaw, TargetYaw, 0.1f))
+		{
+			CurrentRot.Yaw = TargetYaw;
+			Panel->SetRelativeRotation(CurrentRot);
+			bIsMoving = false;
+		}
+	}
 }
 
 void ADoorBase::OverlapEvent(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
@@ -58,6 +86,21 @@ void ADoorBase::OverlapEvent(UPrimitiveComponent* OverlappedComponent, AActor* O
 	if (OtherActor == UGameplayStatics::GetPlayerCharacter(GetWorld(),0))
 	{
 		CheckDir();
+
+		if (!bIsOpen)
+		{
+			OpenDoor();
+		}
+	}
+}
+
+void ADoorBase::OverlapEnd(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp,
+	int32 OtherBodyIndex)
+{
+	if (OtherActor == UGameplayStatics::GetPlayerCharacter(GetWorld(),0))
+	{
+		GetWorldTimerManager().ClearTimer(CloseTimerHandle);
+		GetWorldTimerManager().SetTimer(CloseTimerHandle, this, &ADoorBase::CloseDoorByTimer, 3.f, false);
 	}
 }
 
@@ -83,5 +126,39 @@ void ADoorBase::CheckDir()
 		bCorrectDirection = false;
 		UE_LOG(LogTemp, Warning, TEXT("정면"));
 	}
+}
+
+void ADoorBase::OpenDoor()
+{
+	if (bIsMoving)
+	{
+		return;
+	}
+
+	float Sign = bCorrectDirection ? 1.f : -1.f;
+
+	TargetYaw = CloseYaw + Sign * OpenAngle;
+
+	bIsOpen = true;
+	bIsMoving = true;
+
+	GetWorldTimerManager().ClearTimer(CloseTimerHandle);
+}
+
+void ADoorBase::CloseDoor()
+{
+	if (bIsMoving)
+	{
+		return;
+	}
+
+	TargetYaw = CloseYaw;
+	bIsOpen = false;
+	bIsMoving = true;
+}
+
+void ADoorBase::CloseDoorByTimer()
+{
+	CloseDoor();
 }
 
