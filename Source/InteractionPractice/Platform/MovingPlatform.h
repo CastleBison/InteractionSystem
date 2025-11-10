@@ -39,7 +39,18 @@ private:
 
 	// 이동 속도
 	UPROPERTY(EditAnywhere)
-	float MoveSpeed = 2.f;
+	float MoveSpeed; // = 2.f;	// 여기서도 초기화 .cpp에서도 초기화 하는건 좋지 못해요~
+								// 초기화 하는 방식은 통일 하는게 좋습니다.
+
+	// 이동 오프셋
+	UPROPERTY(EditAnywhere)
+	float MoveOffset;
+
+	UPROPERTY()
+	TObjectPtr<ACharacter>			PlayerCharacter;
+
+	// 감지 플래그
+	bool bIsActive = false;
 
 	// 오버랩 시작
 	UFUNCTION()
