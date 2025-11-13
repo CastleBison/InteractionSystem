@@ -43,9 +43,7 @@ private:
 	// 이동 오프셋
 	UPROPERTY(EditAnywhere)
 	float MoveOffset;
-
-	UPROPERTY()
-	TObjectPtr<ACharacter>			PlayerCharacter;
+	
 
 	// 감지 플래그
 	bool bIsActive = false;

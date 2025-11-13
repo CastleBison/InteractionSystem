@@ -50,11 +50,7 @@ void AMovingPlatform::BeginPlay()
 	MoveOffset = 300.f;
 	
 	TargetLocation = StartLocation + FVector(0.f, 0.f, MoveOffset);
-
-	if (!PlayerCharacter)
-	{
-		PlayerCharacter = UGameplayStatics::GetPlayerCharacter(this, 0);	
-	}
+	
 }
 
 void AMovingPlatform::Tick(float DeltaTime)
@@ -64,16 +60,16 @@ void AMovingPlatform::Tick(float DeltaTime)
 	FVector Target  = FVector();
 	FVector CurrentLocation = GetActorLocation();
 
+	
+	if (bIsActive)
 	{
-		if (bIsActive)
-		{
-			Target = TargetLocation;
-		}
-		else
-		{
-			Target = StartLocation;
-		}
+		Target = TargetLocation;
 	}
+	else
+	{
+		Target = StartLocation;
+	}
+	
 	
 	FVector NewLocation = FMath::VInterpTo(CurrentLocation, Target, DeltaTime, MoveSpeed);
 
@@ -88,11 +84,20 @@ void AMovingPlatform::OnDetectBeginOverlap(UPrimitiveComponent* OverlappedComp, 
 		return;
 	}
 
-	if (OtherActor->ActorHasTag("Player"))
+	if (OtherActor->ActorHasTag("TestPlayer"))
 	{
 		bIsActive = true;
 		UE_LOG(LogTemp, Warning, TEXT("플레이어 진입"));
 	}
+	// 로그 찍어보기
+	UE_LOG(LogTemp, Warning, TEXT("%s") ,*OverlappedComp->GetName());
+	UE_LOG(LogTemp, Warning, TEXT("%s") ,*OtherActor->GetName());;
+	UE_LOG(LogTemp, Warning, TEXT("%s") ,*OtherComp->GetName());
+	UE_LOG(LogTemp, Display, TEXT("%d") ,OtherBodyIndex);
+	UE_LOG(LogTemp, Verbose, TEXT("%d") ,bFromSweep);
+	UE_LOG(LogTemp, VeryVerbose, TEXT("%d") ,SweepResult.IsValidBlockingHit());
+	
+	
 }
 
 void AMovingPlatform::OnDetectEndOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
@@ -103,7 +108,7 @@ void AMovingPlatform::OnDetectEndOverlap(UPrimitiveComponent* OverlappedComp, AA
 		return;
 	}
 
-	if (OtherActor->ActorHasTag("Player"))
+	if (OtherActor->ActorHasTag("TestPlayer"))
 	{
 		bIsActive = false;
 		UE_LOG(LogTemp, Warning, TEXT("플레이어 이탈"));
