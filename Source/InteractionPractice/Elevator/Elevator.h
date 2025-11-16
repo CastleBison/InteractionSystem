@@ -33,12 +33,17 @@ private:
 
 	bool bIsActive = false;
 
+	// 초기 층 세팅
+	FVector DefaultFloor;
+	
 protected:
 	UFUNCTION()
 	void OnOverlapEvent(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,	bool bFromSweep, const FHitResult& SweepResult);
 
-	UFUNCTION(BlueprintCallable)
-	void UpMovement();
+	UFUNCTION()
+	void OnEndOverlapEvent(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+	
+
 
 	// 층 배열
 	UPROPERTY(EditAnywhere)
@@ -48,5 +53,8 @@ protected:
 	UPROPERTY(EditAnywhere)
 	int32 GoalFloor = 0;
 
-	int32 MaxFloor = 100;
+	float MoveSpeed = 2.f;
+
+	// 층 이동 함수
+	void MoveElevator(float DeltaTime);
 };
