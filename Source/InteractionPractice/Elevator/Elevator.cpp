@@ -49,8 +49,18 @@ void AElevator::BeginPlay()
 {
 	Super::BeginPlay();
 
-	DefaultFloor = GetActorLocation();
-	GoalFloor = DefaultFloor.Z;
+	// 엘레베이터 시작 위치 저장
+	StartLocation = GetActorLocation();
+
+	if (FloorLocationArray.IsValidIndex(0))
+	{
+		TargetFloorIndex = 0;
+		TargetFloorZ = StartLocation.Z + FloorLocationArray[TargetFloorIndex];
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("없는 층입니다."))
+	}
 }
 
 void AElevator::Tick(float DeltaTime)
@@ -63,23 +73,6 @@ void AElevator::Tick(float DeltaTime)
 
 void AElevator::OnOverlapEvent(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,	const FHitResult & SweepResult)
 {
-	/*if (OtherActor->ActorHasTag("Player"))
-	{
-		if (!bIsActive)
-		{
-			// 오버랩이 시작되면, 지정된 목표층(GoalFloor) 인덱스를 이용해 배열에서 해당 층의 위치를 가져온 뒤 그 위치로 엘리베이터를 이동
-			bIsActive = true;
-			UE_LOG(LogTemp, Warning, TEXT("플레이어 진입")); // 오버랩 시작
-
-			if (GoalFloor > FloorLocationArray.Num()) return; // 예외처리
-		
-			
-			float SelectFloorLocation = FloorLocationArray[GoalFloor]; // 인덱스를 이용해서 배열에 접근 후 출력
-			
-			UE_LOG(LogTemp,Warning,TEXT("select floor location : %f"), SelectFloorLocation);
-		}
-	}*/
-
 	if (OtherActor && OtherActor ->ActorHasTag("Player"))
 	{
 		if (bIsActive)
@@ -87,16 +80,16 @@ void AElevator::OnOverlapEvent(UPrimitiveComponent* OverlappedComponent, AActor*
 			return;
 		}
 
-		if (!FloorLocationArray.IsValidIndex(GoalFloor))
+		if (!FloorLocationArray.IsValidIndex(TargetFloorIndex))
 		{
-			UE_LOG(LogTemp, Warning, TEXT("잘못된 층 인덱스: %d"), GoalFloor);
+			UE_LOG(LogTemp, Warning, TEXT("잘못된 층: %d"), TargetFloorIndex);
 			return;
 		}
 
-		GoalFloor = DefaultFloor.Z + FloorLocationArray[GoalFloor];
+		TargetFloorZ = StartLocation.Z + FloorLocationArray[TargetFloorIndex];
 		bIsActive = true;
 
-		UE_LOG(LogTemp, Warning, TEXT("플레이어 진입, 목표 층: %d"), GoalFloor);
+		UE_LOG(LogTemp, Warning, TEXT("목표 층: %d"), TargetFloorZ);
 	}
 	
 }
@@ -105,16 +98,16 @@ void AElevator::OnEndOverlapEvent(UPrimitiveComponent* OverlappedComponent, AAct
 {
 	if (OtherActor && OtherActor->ActorHasTag("Player"))
 	{
-		// 1층 = FloorLocationArray[0]
 		if (!FloorLocationArray.IsValidIndex(0))
 		{
 			return;
 		}
 
-		GoalFloor = DefaultFloor.Z + FloorLocationArray[0];
+		TargetFloorIndex = 0;
+		TargetFloorZ = StartLocation.Z + FloorLocationArray[0];
 		bIsActive = true;
 
-		UE_LOG(LogTemp, Warning, TEXT("플레이어 나감, 1층으로 복귀 TargetZ: %d"),GoalFloor);
+		UE_LOG(LogTemp, Warning, TEXT("1층으로 복귀: %d"),TargetFloorZ);
 	}
 }
 
@@ -125,18 +118,15 @@ void AElevator::MoveElevator(float DeltaTime)
 		return;
 	}
 
-	FVector CurrentFloor = GetActorLocation();
+	FVector CurrentLocation = GetActorLocation();
 
-	float NextFloor = FMath::FInterpTo(CurrentFloor.Z, GoalFloor, DeltaTime, MoveSpeed);
+	float NextFloor = FMath::FInterpTo(CurrentLocation.Z, TargetFloorZ, DeltaTime, MoveSpeed);
 
-	CurrentFloor.Z = NextFloor;
-	SetActorLocation(CurrentFloor);
+	CurrentLocation.Z = NextFloor;
+	SetActorLocation(CurrentLocation);
 
-	if (FMath::IsNearlyEqual(NextFloor, GoalFloor, 1.f));
+	if (FMath::IsNearlyEqual(NextFloor, TargetFloorZ, 1.f))
 	{
-		CurrentFloor.Z = NextFloor;
-		SetActorLocation(CurrentFloor);
-
 		bIsActive = false;
 	}
 }

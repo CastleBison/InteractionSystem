@@ -31,10 +31,26 @@ private:
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<UBoxComponent>			OverlapBox;
 
+	// 엘리베이터가 움직이는 중인지 여부
 	bool bIsActive = false;
 
-	// 초기 층 세팅
-	FVector DefaultFloor;
+	// 시작 위치
+	FVector StartLocation;
+
+	// 층 배열
+	UPROPERTY(EditAnywhere)
+	TArray<float>	FloorLocationArray; // 배열 타입과 넣는 값 타입 일치시키기
+
+	// 실제로 이동해야 할 Z값
+	UPROPERTY(EditAnywhere)
+	int32 TargetFloorZ = 0;
+
+	// 목표 층 인덱스
+	UPROPERTY(EditAnywhere)
+	int32 TargetFloorIndex = 0;
+
+	// 엘레베이터 이동 속도
+	float MoveSpeed = 2.f;
 	
 protected:
 	UFUNCTION()
@@ -43,18 +59,6 @@ protected:
 	UFUNCTION()
 	void OnEndOverlapEvent(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 	
-
-
-	// 층 배열
-	UPROPERTY(EditAnywhere)
-	TArray<int32>	FloorLocationArray;
-
-	// 에디터에서 목표층을 설정할 수 있는 변수 선언
-	UPROPERTY(EditAnywhere)
-	int32 GoalFloor = 0;
-
-	float MoveSpeed = 2.f;
-
 	// 층 이동 함수
 	void MoveElevator(float DeltaTime);
 };
