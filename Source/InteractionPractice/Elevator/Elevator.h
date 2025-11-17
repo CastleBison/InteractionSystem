@@ -42,15 +42,14 @@ private:
 	TArray<float>	FloorLocationArray; // 배열 타입과 넣는 값 타입 일치시키기
 
 	// 실제로 이동해야 할 Z값
-	UPROPERTY(EditAnywhere)
-	int32 TargetFloorZ = 0;
+	float TargetFloorZ = 0;
 
 	// 목표 층 인덱스
 	UPROPERTY(EditAnywhere)
 	int32 TargetFloorIndex = 0;
 
 	// 엘레베이터 이동 속도
-	float MoveSpeed = 2.f;
+	float MoveSpeed = 2;
 	
 protected:
 	UFUNCTION()
