@@ -49,7 +49,7 @@ private:
 	int32 TargetFloorIndex = 0;
 
 	// 엘레베이터 이동 속도
-	float MoveSpeed = 2;
+	float MoveSpeed = .5;
 	
 protected:
 	UFUNCTION()

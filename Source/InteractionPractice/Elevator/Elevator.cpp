@@ -4,8 +4,6 @@
 #include "Components/BoxComponent.h"
 #include "GameFramework/Character.h"
 
-
-
 AElevator::AElevator()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -51,19 +49,6 @@ void AElevator::BeginPlay()
 
 	// 엘레베이터 시작 위치 저장
 	StartLocation = GetActorLocation();
-
-	/*// 배열에 있는 0번째 인덱스가 있으면
-	if (FloorLocationArray.IsValidIndex(0))
-	{
-		// TargetFloorIndex 가 0임
-		// TargetFloorIndex = 0; // 이게 바뀌여야함.
-		// 움직일 Z값 = 초기 Z위치 + 배열에 있는 TargetFloorIndex값.
-		TargetFloorZ = StartLocation.Z + FloorLocationArray[TargetFloorIndex];
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("없는 층입니다."))
-	}*/
 }
 
 void AElevator::Tick(float DeltaTime)
@@ -120,7 +105,7 @@ void AElevator::OnEndOverlapEvent(UPrimitiveComponent* OverlappedComponent, AAct
 			return;
 		}
 		
-		TargetFloorZ = StartLocation.Z + FloorLocationArray[0];
+		TargetFloorZ = StartLocation.Z;
 		bIsActive = true;
 
 		UE_LOG(LogTemp, Warning, TEXT("1층으로 복귀: %f"),TargetFloorZ);
@@ -136,21 +121,19 @@ void AElevator::MoveElevator(float DeltaTime)
 
 	FVector CurrentLocation = GetActorLocation();
 	
-	UE_LOG(LogTemp, Warning, TEXT("NextFloor: %f"), CurrentLocation.Z);
-
-	UE_LOG(LogTemp, Warning, TEXT("TargetFloorZ: %f"), TargetFloorZ);
-	
 	float NextFloorZ = FMath::FInterpTo(CurrentLocation.Z, TargetFloorZ, DeltaTime, MoveSpeed);
 
 	CurrentLocation.Z = NextFloorZ;
 	SetActorLocation(CurrentLocation);
-
+	
+	
 	// A값, B값 같아지는 오차? > 0.000001 >>>>1.f 
 	if (FMath::IsNearlyEqual(NextFloorZ, TargetFloorZ,1.f))
 	{
-
 		bIsActive = false;
 	}
+
+	
 
 	
 }
