@@ -64,8 +64,9 @@ void AElevator::OnOverlapEvent(UPrimitiveComponent* OverlappedComponent, AActor*
 	// OtherActor가 있고, 그 OtherActor가 Player라는 태그를 가지고 있으면?
 	if (OtherActor && OtherActor->ActorHasTag("Player"))
 	{
-		// bIsActive가 참이면 리턴 
-		if (bIsActive)
+		bIsInPlayer = true;
+		// bIsActive가 false면 움직이지 않음, bIsInPlayer가 false면 탑승하지않음. true면 탑승.
+		if (!bIsActive)
 		{
 			return;
 		}
@@ -78,8 +79,7 @@ void AElevator::OnOverlapEvent(UPrimitiveComponent* OverlappedComponent, AActor*
 			return;
 		}
 
-		// 목표로할 값 = 처음 Z위치 + 배열에서 TargetFloorIndex에 대한하는 인덱스에서 값 얻기 
-		TargetFloorZ = StartLocation.Z + FloorLocationArray[TargetFloorIndex];
+	
 
 		
 		UE_LOG(LogTemp, Warning, TEXT("FloorLocationArray: %f"), FloorLocationArray[TargetFloorIndex]);
@@ -99,6 +99,7 @@ void AElevator::OnEndOverlapEvent(UPrimitiveComponent* OverlappedComponent, AAct
 	
 	if (OtherActor && OtherActor->ActorHasTag("Player"))
 	{
+		bIsInPlayer = false;
 		UE_LOG(LogTemp, Warning, TEXT("OverlapEnd"));
 		if (!FloorLocationArray.IsValidIndex(0))
 		{
@@ -132,10 +133,41 @@ void AElevator::MoveElevator(float DeltaTime)
 	{
 		bIsActive = false;
 	}
+}
 
-	
+bool AElevator::GetIsActive()
+{
+	return bIsActive;
+}
 
+void AElevator::SetIsActive(const bool NewActive)
+{
+	bIsActive = NewActive;
+}
+
+int32 AElevator::GetTargetFloorIndex()
+{
+
+	return TargetFloorIndex;
+}
+
+
+void AElevator::SetTargetFloorIndex(int32 NewTargetFloorIndex)
+{
+	TargetFloorIndex = NewTargetFloorIndex;
+	// 목표로할 값 = 처음 Z위치 + 배열에서 TargetFloorIndex에 대한하는 인덱스에서 값 얻기 
+	TargetFloorZ = StartLocation.Z + FloorLocationArray[TargetFloorIndex];
 	
+}
+
+bool AElevator::GetIsInPlayer()
+{
+	return bIsInPlayer;
+}
+
+void AElevator::SetIsInPlayer(bool NewIsInPlayer)
+{
+	bIsInPlayer = NewIsInPlayer;
 }
 
 

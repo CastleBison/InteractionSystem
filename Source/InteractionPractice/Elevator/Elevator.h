@@ -31,6 +31,7 @@ private:
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<UBoxComponent>			OverlapBox;
 
+	
 	// 엘리베이터가 움직이는 중인지 여부
 	bool bIsActive = false;
 
@@ -45,11 +46,16 @@ private:
 	float TargetFloorZ = 0;
 
 	// 목표 층 인덱스
+public:
 	UPROPERTY(EditAnywhere)
 	int32 TargetFloorIndex = 0;
 
+private:
 	// 엘레베이터 이동 속도
 	float MoveSpeed = .5;
+
+	// 탑승 여부
+	bool bIsInPlayer;
 	
 protected:
 	UFUNCTION()
@@ -57,7 +63,28 @@ protected:
 
 	UFUNCTION()
 	void OnEndOverlapEvent(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
-	
-	// 층 이동 함수
+
+public:
+	UFUNCTION(BlueprintCallable)
 	void MoveElevator(float DeltaTime);
+
+public:
+	UFUNCTION(BlueprintCallable)
+	bool GetIsActive();
+
+	UFUNCTION(BlueprintCallable)
+	void SetIsActive(bool NewActive);
+
+	int32 GetTargetFloorIndex();
+
+	UFUNCTION(BlueprintCallable)
+	void SetTargetFloorIndex(int32 NewTargetFloorIndex);
+
+	UFUNCTION(BlueprintCallable)
+	bool GetIsInPlayer();
+
+	UFUNCTION(BlueprintCallable)
+	void SetIsInPlayer(bool NewIsInPlayer);
+
+	
 };
