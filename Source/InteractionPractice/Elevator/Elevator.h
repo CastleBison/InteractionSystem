@@ -72,7 +72,7 @@ public:
 	UFUNCTION(BlueprintCallable)
 	bool GetIsActive();
 
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION()
 	void SetIsActive(bool NewActive);
 
 	int32 GetTargetFloorIndex();

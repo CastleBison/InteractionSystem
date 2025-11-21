@@ -1,8 +1,10 @@
 
 #include "Elevator.h"
 
+#include "Blueprint/UserWidget.h"
 #include "Components/BoxComponent.h"
 #include "GameFramework/Character.h"
+#include "Kismet/GameplayStatics.h"
 
 AElevator::AElevator()
 {
@@ -49,6 +51,18 @@ void AElevator::BeginPlay()
 
 	// 엘레베이터 시작 위치 저장
 	StartLocation = GetActorLocation();
+
+	AElevator* NewElevator = this;
+	
+
+	FTimerHandle TimerHandle;
+	GetWorld()->GetTimerManager().SetTimer(TimerHandle, []()
+	{
+		// 딜레이 구현부
+	},3.f,false);
+
+	UGameplayStatics::GetPlayerController(GetWorld(),0); // 플레이어 컨트롤러
+	
 }
 
 void AElevator::Tick(float DeltaTime)
@@ -157,7 +171,8 @@ void AElevator::SetTargetFloorIndex(int32 NewTargetFloorIndex)
 	TargetFloorIndex = NewTargetFloorIndex;
 	// 목표로할 값 = 처음 Z위치 + 배열에서 TargetFloorIndex에 대한하는 인덱스에서 값 얻기 
 	TargetFloorZ = StartLocation.Z + FloorLocationArray[TargetFloorIndex];
-	
+
+	SetIsActive(true);
 }
 
 bool AElevator::GetIsInPlayer()
@@ -169,5 +184,6 @@ void AElevator::SetIsInPlayer(bool NewIsInPlayer)
 {
 	bIsInPlayer = NewIsInPlayer;
 }
+
 
 
