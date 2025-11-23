@@ -5,6 +5,9 @@
 #include "Components/BoxComponent.h"
 #include "GameFramework/Character.h"
 #include "Kismet/GameplayStatics.h"
+#include "GameFramework/PlayerController.h"
+#include "UObject/ConstructorHelpers.h"
+#include "Blueprint/UserWidget.h"
 
 AElevator::AElevator()
 {
@@ -14,7 +17,7 @@ AElevator::AElevator()
 	SetRootComponent(ElevatorFrame);
 	ElevatorFrame->SetRelativeRotation(FRotator(0.f, 90.f, 0.f));
 	
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> Frame(TEXT("/Script/Engine.StaticMesh'/Game/Mesh/SM_ElevatorBody.SM_ElevatorBody'"));
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> Frame(TEXT("/Script/Engine.StaticMesh'/Game/Mesh/Body.Body'"));
 	if (Frame.Succeeded())
 	{
 		ElevatorFrame->SetStaticMesh(Frame.Object);
@@ -23,7 +26,7 @@ AElevator::AElevator()
 	ElevatorBody = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ElevatorBody"));
 	ElevatorBody->SetupAttachment(ElevatorFrame);
 
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> Body(TEXT("/Script/Engine.StaticMesh'/Game/Mesh/ElecvatorInner.ElecvatorInner'"));
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> Body(TEXT("/Script/Engine.StaticMesh'/Game/Mesh/ElevatorInner.ElevatorInner'"));
 	if (Body.Succeeded())
 	{
 		ElevatorBody->SetStaticMesh(Body.Object);
@@ -37,84 +40,74 @@ AElevator::AElevator()
 	OverlapBox->OnComponentBeginOverlap.AddDynamic(this, &ThisClass::OnOverlapEvent);
 	OverlapBox->OnComponentEndOverlap.AddDynamic(this, &ThisClass::OnEndOverlapEvent);
 
-	// 층별 위치값 배열 
-	FloorLocationArray.Add(0); // 1층
-	FloorLocationArray.Add(260); // 2층
-	FloorLocationArray.Add(520); // 3층
-	FloorLocationArray.Add(780); // 4층
-	FloorLocationArray.Add(1040); // 5층
+	FloorLocationArray.Add(0);
+	FloorLocationArray.Add(260);
+	FloorLocationArray.Add(520);
+	FloorLocationArray.Add(780);
+	FloorLocationArray.Add(1040);
+
+	// 위젯 경로 지정
+	static ConstructorHelpers::FClassFinder<UUserWidget> WidgetClassFinder(TEXT("/Game/Widget/WBP_FloorUI.WBP_FloorUI_C"));
+
+	if (WidgetClassFinder.Succeeded())
+	{
+		ElevatorWidgetClass = WidgetClassFinder.Class;
+	}
 }
 
 void AElevator::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// 엘레베이터 시작 위치 저장
 	StartLocation = GetActorLocation();
 
-	AElevator* NewElevator = this;
-	
-
-	FTimerHandle TimerHandle;
-	GetWorld()->GetTimerManager().SetTimer(TimerHandle, []()
+	if (FloorLocationArray.IsValidIndex(TargetFloorIndex))
 	{
-		// 딜레이 구현부
-	},3.f,false);
-
-	UGameplayStatics::GetPlayerController(GetWorld(),0); // 플레이어 컨트롤러
-	
+		TargetFloorZ = StartLocation.Z + FloorLocationArray[TargetFloorIndex];
+		UE_LOG(LogTemp, Warning, TEXT("BeginPlay 초기 목표 층 Z: %f"), TargetFloorZ);
+	}
 }
 
 void AElevator::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	// 실제로 Tick에서 함수 동작
 	MoveElevator(DeltaTime);
 }
 
 void AElevator::OnOverlapEvent(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,	const FHitResult & SweepResult)
 {
-	// OtherActor가 있고, 그 OtherActor가 Player라는 태그를 가지고 있으면?
 	if (OtherActor && OtherActor->ActorHasTag("Player"))
 	{
 		bIsInPlayer = true;
-		// bIsActive가 false면 움직이지 않음, bIsInPlayer가 false면 탑승하지않음. true면 탑승.
-		if (!bIsActive)
-		{
-			return;
-		}
 
-		// TargetFloorIndex가 배열의 범위를 벗어나면
+		ShowElevatorWidget();
+
 		if (!FloorLocationArray.IsValidIndex(TargetFloorIndex))
 		{
-			// 잘못된 층 로그 출력
 			UE_LOG(LogTemp, Warning, TEXT("잘못된 층: %d"), TargetFloorIndex);
 			return;
 		}
 
-	
+		TargetFloorZ = StartLocation.Z + FloorLocationArray[TargetFloorIndex];
 
-		
-		UE_LOG(LogTemp, Warning, TEXT("FloorLocationArray: %f"), FloorLocationArray[TargetFloorIndex]);
-		UE_LOG(LogTemp, Warning, TEXT("TargetFloorIndex: %d"), TargetFloorIndex);
-		
-		// 활성상태
-		bIsActive = true;
-
-		
-		// 로그 출력 (목표로 할 값)
-		UE_LOG(LogTemp, Warning, TEXT("목표 층: %f"), TargetFloorZ);
+		if (!bIsActive)
+		{
+			bIsActive = true;
+			UE_LOG(LogTemp, Warning, TEXT("목표 층: %f"), TargetFloorZ);
+		}
 	}
 }
 
 void AElevator::OnEndOverlapEvent(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
-	
 	if (OtherActor && OtherActor->ActorHasTag("Player"))
 	{
 		bIsInPlayer = false;
-		UE_LOG(LogTemp, Warning, TEXT("OverlapEnd"));
+		UE_LOG(LogTemp, Warning, TEXT("엘레베이터 이탈"));
+
+		HideElevatorWidget();
+		
 		if (!FloorLocationArray.IsValidIndex(0))
 		{
 			return;
@@ -122,8 +115,6 @@ void AElevator::OnEndOverlapEvent(UPrimitiveComponent* OverlappedComponent, AAct
 		
 		TargetFloorZ = StartLocation.Z;
 		bIsActive = true;
-
-		UE_LOG(LogTemp, Warning, TEXT("1층으로 복귀: %f"),TargetFloorZ);
 	}
 }
 
@@ -140,9 +131,8 @@ void AElevator::MoveElevator(float DeltaTime)
 
 	CurrentLocation.Z = NextFloorZ;
 	SetActorLocation(CurrentLocation);
+
 	
-	
-	// A값, B값 같아지는 오차? > 0.000001 >>>>1.f 
 	if (FMath::IsNearlyEqual(NextFloorZ, TargetFloorZ,1.f))
 	{
 		bIsActive = false;
@@ -161,7 +151,6 @@ void AElevator::SetIsActive(const bool NewActive)
 
 int32 AElevator::GetTargetFloorIndex()
 {
-
 	return TargetFloorIndex;
 }
 
@@ -169,7 +158,6 @@ int32 AElevator::GetTargetFloorIndex()
 void AElevator::SetTargetFloorIndex(int32 NewTargetFloorIndex)
 {
 	TargetFloorIndex = NewTargetFloorIndex;
-	// 목표로할 값 = 처음 Z위치 + 배열에서 TargetFloorIndex에 대한하는 인덱스에서 값 얻기 
 	TargetFloorZ = StartLocation.Z + FloorLocationArray[TargetFloorIndex];
 
 	SetIsActive(true);
@@ -183,6 +171,63 @@ bool AElevator::GetIsInPlayer()
 void AElevator::SetIsInPlayer(bool NewIsInPlayer)
 {
 	bIsInPlayer = NewIsInPlayer;
+}
+
+void AElevator::ShowElevatorWidget()
+{
+	// 이미 켜져 있거나, 클래스가 없으면 바로 종료
+	if (bWidgetVisible || !ElevatorWidgetClass)
+	{
+		return;
+	}
+
+	// 플레이어 컨트롤러 가져오기
+	if (APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0))
+	{
+		// 위젯 인스턴스가 없으면 생성
+		if (!ElevatorWidgetInstance)
+		{
+			ElevatorWidgetInstance = CreateWidget<UUserWidget>(PC, ElevatorWidgetClass);
+		}
+
+		// 생성이 잘 됐으면 화면에 추가
+		if (ElevatorWidgetInstance)
+		{
+			ElevatorWidgetInstance->AddToViewport();
+
+			// 마우스 커서 보이게 + 게임+UI 입력 모드
+			PC->bShowMouseCursor = true;
+
+			FInputModeGameAndUI InputMode;
+			InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+			PC->SetInputMode(InputMode);
+
+			bWidgetVisible = true;
+		}
+	}
+}
+
+void AElevator::HideElevatorWidget()
+{
+	if (!bWidgetVisible)
+	{
+		return;
+	}
+
+	if (APlayerController* PC = UGameplayStatics::GetPlayerController(GetWorld(), 0))
+	{
+		if (ElevatorWidgetInstance)
+		{
+			ElevatorWidgetInstance->RemoveFromParent();
+		}
+
+		PC->bShowMouseCursor = false;
+
+		FInputModeGameOnly GameOnly;
+		PC->SetInputMode(GameOnly);
+	}
+
+	bWidgetVisible = false;
 }
 
 

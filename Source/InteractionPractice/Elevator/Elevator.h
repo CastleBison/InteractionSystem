@@ -6,6 +6,7 @@
 
 // 전방선언
 class UBoxComponent;
+class UUserWidget;
 
 UCLASS()
 class INTERACTIONPRACTICE_API AElevator : public AActor
@@ -54,7 +55,8 @@ private:
 	// 엘레베이터 이동 속도
 	float MoveSpeed = .5;
 
-	// 탑승 여부
+protected:
+	UPROPERTY(EditAnywhere)
 	bool bIsInPlayer;
 	
 protected:
@@ -86,5 +88,17 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void SetIsInPlayer(bool NewIsInPlayer);
 
+protected:
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<UUserWidget> ElevatorWidgetClass;
+
+	UPROPERTY()
+	UUserWidget* ElevatorWidgetInstance = nullptr;
+
+	bool bWidgetVisible = false;
+
+	void ShowElevatorWidget();
+
+	void HideElevatorWidget();
 	
 };
